@@ -16,6 +16,7 @@ You must have at least 3 tools. The three required tools are listed — add any 
 
 **What it does:**
 <!-- Describe what this tool does in 1–2 sentences -->
+FitFindr is an agent that will use at least three tools generate the description of an outfit which can be shared publicly. The agent will select the tools to apply in the necessary order and will either generate the description of an outfit or, on error, respond to the user with an appropriate message.
 
 **Input parameters:**
 <!-- List each parameter, its type, and what it represents -->
