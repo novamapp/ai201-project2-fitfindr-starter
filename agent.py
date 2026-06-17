@@ -18,6 +18,7 @@ Usage (once implemented):
     print(result["error"])   # None on success
 """
 
+import datetime
 from tools import search_listings, suggest_outfit, create_fit_card
 
 
@@ -51,50 +52,76 @@ def run_agent(query: str, wardrobe: dict) -> dict:
     """
     Main agent entry point. Runs the FitFindr planning loop for a single
     user interaction and returns the completed session dict.
-
-    Args:
-        query:    Natural language user request
-                  (e.g., "vintage graphic tee under $30, size M")
-        wardrobe: User's wardrobe dict — use get_example_wardrobe() or
-                  get_empty_wardrobe() from utils/data_loader.py
-
-    Returns:
-        The session dict after the interaction completes. Check session["error"]
-        first — if it is not None, the interaction ended early and the other
-        output fields (outfit_suggestion, fit_card) will be None.
-
-    TODO — implement this function using the planning loop you designed in planning.md:
-
-        Step 1: Initialize the session with _new_session().
-
-        Step 2: Parse the user's query to extract a description, size, and
-                max_price. You can use regex, string splitting, or ask the LLM
-                to parse it — document your choice in planning.md.
-                Store the result in session["parsed"].
-
-        Step 3: Call search_listings() with the parsed parameters.
-                Store results in session["search_results"].
-                If no results: set session["error"] to a helpful message and
-                return the session early. Do NOT proceed to suggest_outfit
-                with empty input.
-
-        Step 4: Select the item to use (e.g., the top result).
-                Store it in session["selected_item"].
-
-        Step 5: Call suggest_outfit() with the selected item and wardrobe.
-                Store the result in session["outfit_suggestion"].
-
-        Step 6: Call create_fit_card() with the outfit suggestion and selected item.
-                Store the result in session["fit_card"].
-
-        Step 7: Return the session.
-
-    Before writing code, complete the Planning Loop and State Management sections
-    of planning.md — your implementation should match what you described there.
     """
-    # TODO: implement the planning loop
-    session = _new_session(query, wardrobe)
-    session["error"] = "Planning loop not yet implemented."
+    # 1. Initialize the single source of truth session state
+    try:
+        session = _new_session(query, wardrobe)
+    except Exception:
+        # If initial setup fails, terminate immediately with the generic error
+        print("Unable to process request")
+        return {"error": "Unable to process request"}
+    
+    print("query:", session["query"])
+
+    # 2. Execute search_listings
+    try:
+        # Extract parsed fields if they were populated during initialization,
+        # otherwise fallback to safe defaults or empty strings.
+        parsed_args = session.get("parsed", {})
+        description = parsed_args.get("description", query)
+        size = parsed_args.get("size", None)
+        max_price = parsed_args.get("max_price", None)
+        
+        results = search_listings(description=description, size=size, max_price=max_price)
+        session["search_results"] = results
+        
+        if not results:
+            error_msg = "No items found matching your request. Try broadening your description or removing size/price constraints."
+            session["error"] = error_msg
+            print(error_msg)
+            return session
+            
+    except Exception as e:
+        error_msg = f"No items found due to a search error. Please try updating your query. (Error: {str(e)})"
+        session["error"] = error_msg
+        print(error_msg)
+        return session
+
+    # 3. Process the top result and generate an outfit suggestion
+    session["selected_item"] = results[0]
+    print("selected_item:", session["selected_item"])
+    
+    try:
+        outfit_suggestion = suggest_outfit(session["selected_item"], session["wardrobe"])
+        if not outfit_suggestion:
+            raise ValueError("No suggestions generated")
+            
+        session["outfit_suggestion"] = outfit_suggestion
+        print("outfit_suggestion:", session["outfit_suggestion"])
+        
+    except Exception:
+        error_msg = "An outfit cannot be suggested at this time."
+        session["error"] = error_msg
+        print(error_msg)
+        return session
+
+    # 4. Generate the social-media-style fit card
+    try:
+        fit_card = create_fit_card(session["outfit_suggestion"], session["selected_item"])
+        if not fit_card:
+            raise ValueError("Failed to create fit card")
+            
+        session["fit_card"] = fit_card
+        
+    except Exception:
+        # Dynamically determine the day of the week for the specific error requirement
+        day_of_week = datetime.datetime.now().strftime("%A").lower()
+        error_msg = f"no fit {day_of_week}"
+        session["error"] = error_msg
+        print(error_msg)
+        return session
+
+    # 5. Return successfully completed session
     return session
 
 

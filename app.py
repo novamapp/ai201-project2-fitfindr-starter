@@ -31,20 +31,52 @@ def handle_query(user_query: str, wardrobe_choice: str) -> tuple[str, str, str]:
     Returns:
         A tuple of three strings:
             (listing_text, outfit_suggestion, fit_card)
-        Each string maps to one of the three output panels in the UI.
-
-    TODO:
-        1. Guard against an empty query (return early with an error message).
-        2. Select the wardrobe based on wardrobe_choice.
-        3. Call run_agent() with the query and selected wardrobe.
-        4. If session["error"] is set, return the error in the first panel
-           and empty strings for the other two.
-        5. Otherwise, format session["selected_item"] into a readable listing_text
-           string and return it along with session["outfit_suggestion"] and
-           session["fit_card"].
     """
-    # TODO: implement this function
-    return "Agent not yet implemented.", "", ""
+    # 1. Guard against an empty or purely whitespace query
+    if not user_query or not user_query.strip():
+        return "Error: Query cannot be empty. Please enter what you are looking for.", "", ""
+
+    # 2. Select the wardrobe based on wardrobe_choice
+    if wardrobe_choice == "Example wardrobe":
+        wardrobe = get_example_wardrobe()
+    else:
+        wardrobe = get_empty_wardrobe()
+
+    # 3. Call run_agent() with the query and selected wardrobe
+    session = run_agent(user_query.strip(), wardrobe)
+
+    # 4. Check for errors in the planning loop session state
+    if session.get("error") is not None:
+        # Return the error message in the listing panel, others remain empty
+        return f"Error: {session['error']}", "", ""
+
+    # 5. Format session["selected_item"] into a clean, readable string
+    item = session.get("selected_item", {})
+    
+    # Safely handle missing keys with defaults
+    title = item.get("title", "Unknown Item")
+    price = item.get("price", "N/A")
+    size = item.get("size", "N/A")
+    condition = item.get("condition", "N/A")
+    description = item.get("description", "No description provided.")
+    link = item.get("link", "#")
+
+    listing_text = (
+        f"✨ **Found Best Match** ✨\n\n"
+        f"🛍️ **Item:** {title}\n"
+        f"💰 **Price:** ${price}\n"
+        f"📏 **Size:** {size}\n"
+        f"💎 **Condition:** {condition}\n"
+        f"📝 **Description:** {description}\n\n"
+        f"🔗 **Link:** {link}"
+    )
+
+    # 6. Return the three formatted strings matching the UI panels
+    return (
+        listing_text,
+        session.get("outfit_suggestion") or "",
+        session.get("fit_card") or ""
+    )
 
 
 # ── interface ─────────────────────────────────────────────────────────────────
