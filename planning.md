@@ -19,7 +19,7 @@ You must have at least 3 tools. The three required tools are listed — add any 
 
 **What it does:**
 <!-- Describe what this tool does in 1–2 sentences -->
-The tool search_listings will search through the listings.json dataset in the data folder and return at most three items that match the arguments: description, size, and a max price. It will either return these matches, sorted by relevance, as an array or it will return an empty array. 
+The tool search_listings will search through the listings.json dataset in the data folder and return items that match the arguments: description, size, and a max price. It will either return these matches, sorted by relevance, as an array or it will return an empty array. 
 
 **Input parameters:**
 <!-- List each parameter, its type, and what it represents -->
@@ -29,7 +29,7 @@ The tool search_listings will search through the listings.json dataset in the da
 
 **What it returns:**
 <!-- Describe the return value — what fields does a result contain? -->
-- at most three relevant matching listings items
+- a list of relevant matching listings items
 
 **What happens if it fails or returns nothing:**
 <!-- What should the agent do if no listings match? -->
@@ -45,7 +45,7 @@ The suggest_object tool will be given a new item to add to the current wardrobe 
 
 **Input parameters:**
 <!-- List each parameter, its type, and what it represents -->
-- `new_item` (str): the new item that can be paired with the users current wardrobe
+- `new_item` (dict): the new item that can be paired with the users current wardrobe
 - `wardrobe` (list): the user's current wardrobe
 
 **What it returns:**
@@ -67,7 +67,7 @@ The create_fit_card tool will, given an outfit, generate a short casual, social-
 **Input parameters:**
 <!-- List each parameter, its type, and what it represents -->
 - `outfit_suggestion` (str): a suggested outfit
-- `selected_item` (str): the new item that was added to the user's wardrobe
+- `new_item` (dict): the new item that was added to the user's wardrobe
 
 **What it returns:**
 <!-- Describe the return value -->
